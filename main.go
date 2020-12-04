@@ -5,6 +5,7 @@ import (
   "fmt"
   "net/http"
   "os"
+  "time"
 
   "github.com/gorilla/websocket"
 )
@@ -37,7 +38,17 @@ func websocketLogger(w http.ResponseWriter, r *http.Request) {
   return
 }
 
+type logWriter struct {
+}
+
+func (writer logWriter) Write(bytes []byte) (int, error) {
+  return fmt.Print(time.Now().Format(time.RFC3339) + " - " + string(bytes))
+}
+
 func main() {
+  log.SetFlags(0)
+  log.SetOutput(new(logWriter))
+  log.Println("Starting proxy...")
 
   // Get env vars
   WS_LOGGER_EXPOSED_PORT := os.Getenv("WS_LOGGER_EXPOSED_PORT")
