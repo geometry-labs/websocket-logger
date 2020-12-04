@@ -45,6 +45,11 @@ func main() {
     WS_LOGGER_EXPOSED_PORT = "8080"
   }
 
+  LB_FORWARD_ADDR := os.Getenv("LB_FORWARD_ADDR")
+  if LB_FORWARD_ADDR == "" {
+    LB_FORWARD_ADDR = "???"
+  }
+
   // Allow all origins
   upgrader.CheckOrigin = func(r *http.Request) bool {
     // if req.Header.Get("Origin") != "http://"+req.Host {
