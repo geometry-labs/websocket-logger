@@ -2,7 +2,9 @@ package main
 
 import (
   "log"
+  "fmt"
   "net/http"
+  "os"
 
   "github.com/gorilla/websocket"
 )
@@ -37,7 +39,13 @@ func websocketLogger(w http.ResponseWriter, r *http.Request) {
 
 func main() {
 
-  // allow all origins
+  // Get env vars
+  WS_LOGGER_EXPOSED_PORT := os.Getenv("WS_LOGGER_EXPOSED_PORT")
+  if WS_LOGGER_EXPOSED_PORT == "" {
+    WS_LOGGER_EXPOSED_PORT = "8080"
+  }
+
+  // Allow all origins
   upgrader.CheckOrigin = func(r *http.Request) bool {
     // if req.Header.Get("Origin") != "http://"+req.Host {
 	  //   http.Error(w, "Origin not allowed", http.StatusForbidden)
@@ -48,7 +56,7 @@ func main() {
 
   http.HandleFunc("/ws", websocketLogger)
 
-  http.ListenAndServe(":8080", nil)
+  http.ListenAndServe(fmt.Sprintf(":%s", WS_LOGGER_EXPOSED_PORT), nil)
 
   return
 }
