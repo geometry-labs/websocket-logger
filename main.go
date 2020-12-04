@@ -21,15 +21,15 @@ func websocketLogger(w http.ResponseWriter, r *http.Request) {
   }
 
   for {
-    messageType, p, err := conn.ReadMessage()
+
+    _, data, err := conn.ReadMessage()
     if err != nil {
       log.Println(err)
       return
     }
-    if err := conn.WriteMessage(messageType, p); err != nil {
-      log.Println(err)
-      return
-    }
+
+    // log
+    log.Printf("%s - %s", r.RemoteAddr, string(data))
   }
 
   return
@@ -38,7 +38,13 @@ func websocketLogger(w http.ResponseWriter, r *http.Request) {
 func main() {
 
   // allow all origins
-  upgrader.CheckOrigin = func(r *http.Request) bool { return true }
+  upgrader.CheckOrigin = func(r *http.Request) bool {
+    // if req.Header.Get("Origin") != "http://"+req.Host {
+	  //   http.Error(w, "Origin not allowed", http.StatusForbidden)
+	  //   return
+    // }
+    return true
+  }
 
   http.HandleFunc("/ws", websocketLogger)
 
