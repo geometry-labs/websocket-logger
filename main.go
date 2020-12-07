@@ -3,11 +3,13 @@ package main
 import (
   "log"
   "fmt"
-  "net/http"
   "os"
   "time"
+  "net/http"
+  "net/url"
 
   "github.com/gorilla/websocket"
+  "github.com/koding/websocketproxy"
 )
 
 var upgrader = websocket.Upgrader{
@@ -56,9 +58,9 @@ func main() {
     WS_LOGGER_EXPOSED_PORT = "8080"
   }
 
-  LB_FORWARD_ADDR := os.Getenv("LB_FORWARD_ADDR")
-  if LB_FORWARD_ADDR == "" {
-    LB_FORWARD_ADDR = "???"
+  LB_FORWARD_ADDR, err := url.Parse(os.Getenv("LB_FORWARD_ADDR"))
+  if err != nil {
+    log.Fatalln("Invalid load balancer url")
   }
 
   // Allow all origins
@@ -72,7 +74,16 @@ func main() {
 
   http.HandleFunc("/ws", websocketLogger)
 
-  http.ListenAndServe(fmt.Sprintf(":%s", WS_LOGGER_EXPOSED_PORT), nil)
+  log.Println(LB_FORWARD_ADDR)
+  log.Println(os.Getenv("LB_FORWARD_ADDR"))
+
+  err = http.ListenAndServe(
+    fmt.Sprintf(":%s", WS_LOGGER_EXPOSED_PORT),
+    websocketproxy.NewProxy(LB_FORWARD_ADDR),
+  )
+  if err != nil {
+    log.Fatalln(err)
+  }
 
   return
 }
