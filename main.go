@@ -8,8 +8,9 @@ import (
   "net/http"
   "net/url"
 
+  "insight-infrastructure/websocket-logger/websocketproxy"
+
   "github.com/gorilla/websocket"
-  "github.com/koding/websocketproxy"
 )
 
 var upgrader = websocket.Upgrader{
@@ -24,6 +25,7 @@ func websocketLogger(w http.ResponseWriter, r *http.Request) {
     log.Println(err)
     return
   }
+  defer conn.Close()
 
   for {
 
@@ -73,9 +75,6 @@ func main() {
   }
 
   http.HandleFunc("/ws", websocketLogger)
-
-  log.Println(LB_FORWARD_ADDR)
-  log.Println(os.Getenv("LB_FORWARD_ADDR"))
 
   err = http.ListenAndServe(
     fmt.Sprintf(":%s", WS_LOGGER_EXPOSED_PORT),
