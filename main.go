@@ -31,9 +31,25 @@ func main() {
     WS_LOGGER_EXPOSED_PORT = "8080"
   }
 
-  LB_FORWARD_ADDR, err := url.Parse(os.Getenv("LB_FORWARD_ADDR"))
+  WS_LOGGER_FORWARD_ADDR := os.Getenv("WS_LOGGER_FORWARD_ADDR")
+  if WS_LOGGER_FORWARD_ADDR == "" {
+    WS_LOGGER_FORWARD_ADDR = "ws://localhost:9090/"
+  }
+
+  WS_LOGGER_LOG_CLIENT := os.Getenv("WS_LOGGER_LOG_CLIENT")
+  if WS_LOGGER_LOG_CLIENT == "" {
+    WS_LOGGER_LOG_CLIENT = "true"
+  }
+
+  WS_LOGGER_LOG_SERVER := os.Getenv("WS_LOGGER_LOG_SERVER")
+  if WS_LOGGER_LOG_SERVER == "" {
+    WS_LOGGER_LOG_SERVER = "true"
+  }
+
+  // parse forward address
+  fwd, err := url.Parse(WS_LOGGER_FORWARD_ADDR)
   if err != nil {
-    log.Fatalln("Invalid load balancer url")
+    log.Fatalf("ERROR: forward url cannot be parsed: %s\n", WS_LOGGER_FORWARD_ADDR)
   }
 
   // default handler to connect
@@ -41,7 +57,7 @@ func main() {
 
   err = http.ListenAndServe(
     fmt.Sprintf(":%s", WS_LOGGER_EXPOSED_PORT),
-    websocketproxy.NewProxy(LB_FORWARD_ADDR),
+    websocketproxy.NewProxy(fwd, WS_LOGGER_LOG_CLIENT == "true", WS_LOGGER_LOG_SERVER == "true"),
   )
   if err != nil {
     log.Fatalln(err)

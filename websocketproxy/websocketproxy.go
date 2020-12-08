@@ -45,18 +45,24 @@ type WebsocketProxy struct {
 	// connection to a WebSocket connection. If nil, DefaultUpgrader is used.
 	Upgrader *websocket.Upgrader
 
-	//  Dialer contains options for connecting to the backend WebSocket server.
-	//  If nil, DefaultDialer is used.
+	// Dialer contains options for connecting to the backend WebSocket server.
+	// If nil, DefaultDialer is used.
 	Dialer *websocket.Dialer
+
+  // Enviroment variable WS_LOGGER_LOG_CLIENT
+  LogClient bool
+
+  // Enviroment variable WS_LOGGER_LOG_SERVER
+  LogServer bool
 }
 
 // ProxyHandler returns a new http.Handler interface that reverse proxies the
 // request to the given target.
-func ProxyHandler(target *url.URL) http.Handler { return NewProxy(target) }
+func ProxyHandler(target *url.URL) http.Handler { return NewProxy(target, true, true) }
 
 // NewProxy returns a new Websocket reverse proxy that rewrites the
 // URL's to the scheme, host and base path provider in target.
-func NewProxy(target *url.URL) *WebsocketProxy {
+func NewProxy(target *url.URL, log_client bool, log_server bool) *WebsocketProxy {
 	backend := func(r *http.Request) *url.URL {
 		// Shallow copy
 		u := *target
@@ -65,7 +71,11 @@ func NewProxy(target *url.URL) *WebsocketProxy {
 		u.RawQuery = r.URL.RawQuery
 		return &u
 	}
-	return &WebsocketProxy{Backend: backend}
+	return &WebsocketProxy{
+    Backend: backend,
+    LogClient: log_client,
+    LogServer: log_server,
+  }
 }
 
 // ServeHTTP implements the http.Handler that proxies WebSocket connections.
@@ -192,7 +202,7 @@ func (w *WebsocketProxy) ServeHTTP(rw http.ResponseWriter, req *http.Request) {
 
 	errClient := make(chan error, 1)
 	errBackend := make(chan error, 1)
-	replicateWebsocketConn := func(dst, src *websocket.Conn, errc chan error) {
+	replicateWebsocketConn := func(dst, src *websocket.Conn, errc chan error, log_msg bool) {
 		for {
 			msgType, msg, err := src.ReadMessage()
 			if err != nil {
@@ -208,7 +218,9 @@ func (w *WebsocketProxy) ServeHTTP(rw http.ResponseWriter, req *http.Request) {
 			}
 
       // Log
-      log.Printf("%s - %s\n", req.RemoteAddr, string(msg))
+      if log_msg {
+        log.Printf("%s - %s\n", req.RemoteAddr, string(msg))
+      }
 
 			err = dst.WriteMessage(msgType, msg)
 			if err != nil {
@@ -218,8 +230,8 @@ func (w *WebsocketProxy) ServeHTTP(rw http.ResponseWriter, req *http.Request) {
 		}
 	}
 
-	go replicateWebsocketConn(connPub, connBackend, errClient)
-	go replicateWebsocketConn(connBackend, connPub, errBackend)
+	go replicateWebsocketConn(connPub, connBackend, errClient, w.LogServer)
+	go replicateWebsocketConn(connBackend, connPub, errBackend, w.LogClient)
 
 	var message string
 	select {
