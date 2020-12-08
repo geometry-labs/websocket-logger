@@ -7,6 +7,13 @@ go build
 ./websocket-logger
 ```
 
+### Test
+
+```
+go test ./...
+```
+
+
 ### Enviroment Variables
 | Variables | Default | Description |
 | :--- | :--- | :--- | 
