@@ -186,6 +186,9 @@ func (w *WebsocketProxy) ServeHTTP(rw http.ResponseWriter, req *http.Request) {
 		return
 	}
 	defer connPub.Close()
+  defer log.Printf("%s - Websocket connection closed\n", req.RemoteAddr)
+
+  log.Printf("%s - Websocket connection open\n", req.RemoteAddr)
 
 	errClient := make(chan error, 1)
 	errBackend := make(chan error, 1)
