@@ -9,38 +9,7 @@ import (
   "net/url"
 
   "insight-infrastructure/websocket-logger/websocketproxy"
-
-  "github.com/gorilla/websocket"
 )
-
-var upgrader = websocket.Upgrader{
-    ReadBufferSize:  1024,
-    WriteBufferSize: 1024,
-}
-
-// endpoint: /ws
-func websocketLogger(w http.ResponseWriter, r *http.Request) {
-  conn, err := upgrader.Upgrade(w, r, nil)
-  if err != nil {
-    log.Println(err)
-    return
-  }
-  defer conn.Close()
-
-  for {
-
-    _, data, err := conn.ReadMessage()
-    if err != nil {
-      log.Println(err)
-      return
-    }
-
-    // log
-    log.Printf("%s - %s", r.RemoteAddr, string(data))
-  }
-
-  return
-}
 
 type logWriter struct {
 }
@@ -50,8 +19,10 @@ func (writer logWriter) Write(bytes []byte) (int, error) {
 }
 
 func main() {
+  // set custom log output
   log.SetFlags(0)
   log.SetOutput(new(logWriter))
+
   log.Println("Starting proxy...")
 
   // Get env vars
@@ -65,16 +36,8 @@ func main() {
     log.Fatalln("Invalid load balancer url")
   }
 
-  // Allow all origins
-  upgrader.CheckOrigin = func(r *http.Request) bool {
-    // if req.Header.Get("Origin") != "http://"+req.Host {
-	  //   http.Error(w, "Origin not allowed", http.StatusForbidden)
-	  //   return
-    // }
-    return true
-  }
-
-  http.HandleFunc("/ws", websocketLogger)
+  // default handler to connect
+  http.HandleFunc("/ws", func(w http.ResponseWriter, r *http.Request){return})
 
   err = http.ListenAndServe(
     fmt.Sprintf(":%s", WS_LOGGER_EXPOSED_PORT),

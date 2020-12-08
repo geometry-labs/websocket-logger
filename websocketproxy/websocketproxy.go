@@ -203,6 +203,10 @@ func (w *WebsocketProxy) ServeHTTP(rw http.ResponseWriter, req *http.Request) {
 				dst.WriteMessage(websocket.CloseMessage, m)
 				break
 			}
+
+      // Log
+      log.Printf("%s - %s\n", req.RemoteAddr, string(msg))
+
 			err = dst.WriteMessage(msgType, msg)
 			if err != nil {
 				errc <- err
