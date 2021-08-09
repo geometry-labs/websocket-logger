@@ -1,0 +1,6 @@
+apiVersion: v2
+name: websocket-logger
+description: Chart to deploy logger service for websocket connections
+type: application
+version: 0.0.1
+appVersion: 0.1.0
