@@ -1,0 +1,17 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ template "deployment.fullname" . }}
+  namespace: {{ .Release.Namespace }}
+  labels:
+{{ include "deployment.labels" . | indent 6 }}
+spec:
+  type: ClusterIP
+  ports:
+    - port: 9943
+      name: {{ .Release.Name }}-ws
+      targetPort: 9943
+  selector:
+    app: {{ template "deployment.name" . }}
+    release: {{ .Release.Name }}
+    component: {{ template "deployment.fullname" . }}

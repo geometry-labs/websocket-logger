@@ -1,0 +1,51 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ template "deployment.fullname" . }}
+  namespace: {{ .Release.Namespace }}
+  labels:
+{{ include "deployment.labels" . | indent 6 }}
+spec:
+  replicas: {{ .Values.deployment.replicas }}
+  selector:
+    matchLabels:
+      app: {{ template "deployment.name" . }}
+      chart: {{ template "deployment.chart" . }}
+      release: {{ .Release.Name }}
+      component: {{ template "deployment.fullname" . }}
+  template:
+    metadata:
+{{- if .Values.deployment.annotations }}
+      annotations:
+{{ tpl .Values.deployment.annotations . | indent 8 }}
+{{- end }}
+      labels:
+        app: {{ template "deployment.name" . }}
+        chart: {{ template "deployment.chart" . }}
+        release: {{ .Release.Name }}
+        component: {{ template "deployment.fullname" . }}
+    spec:
+      containers:
+        - name: {{ template "deployment.fullname" . }}
+          image: "{{ .Values.image.repository }}:{{ .Values.image.tag }}"
+          imagePullPolicy: {{ .Values.image.imagePullPolicy }}
+          resources:
+            limits:
+              cpu: {{ .Values.deployment.resources.limits.cpu }}
+              memory: {{ .Values.deployment.resources.limits.memory }}
+            requests:
+              cpu: {{ .Values.deployment.resources.requests.cpu }}
+              memory: {{ .Values.deployment.resources.requests.memory }}
+          ports:
+            - containerPort: 9943
+              name: {{ .Release.Name }}-ws
+              protocol: TCP
+          env:
+            - name: WS_LOGGER_EXPOSED_PORT
+              value: "9943"
+            - name: WS_LOGGER_FORWARD_ADDR
+              value: "ws://{{ .Values.deployment.upstream.uri }}:{{ .Values.deployment.upstream.port }}"
+            - name: WS_LOGGER_LOG_CLIENT
+              value: "{{ .Values.deployment.logClient }}"
+            - name: WS_LOGGER_LOG_SERVER
+              value: "{{ .Values.deployment.logServer }}"
