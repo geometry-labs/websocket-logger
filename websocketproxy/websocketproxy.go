@@ -196,9 +196,16 @@ func (w *WebsocketProxy) ServeHTTP(rw http.ResponseWriter, req *http.Request) {
 		return
 	}
 	defer connPub.Close()
-  defer log.Printf("%s - Websocket connection closed\n", req.RemoteAddr)
+  var remote = ""
+  if hdr := req.Header.Get("X-Forwarded-For"); hdr != "" {
+	ips := strings.Split(hdr, ",")
+	remote = ips[0]
+  } else {
+	remote = req.RemoteAddr
+  }
+  defer log.Printf("%s - Websocket connection closed\n", remote)
 
-  log.Printf("%s - Websocket connection open\n", req.RemoteAddr)
+  log.Printf("%s - Websocket connection open\n", remote)
 
 	errClient := make(chan error, 1)
 	errBackend := make(chan error, 1)
@@ -219,7 +226,7 @@ func (w *WebsocketProxy) ServeHTTP(rw http.ResponseWriter, req *http.Request) {
 
       // Log
       if log_msg {
-        log.Printf("%s - %s\n", req.RemoteAddr, string(msg))
+        log.Printf("%s - %s\n", remote, string(msg))
       }
 
 			err = dst.WriteMessage(msgType, msg)
