@@ -16,14 +16,14 @@ spec:
   metrics:
     - type: Resource
       resource:
-        name: cpu
-        target:
-          type: Utilization
-          averageUtilization: {{ .Values.deployment.scaler.avgCPU }}
-    - type: Resource
-      resource:
         name: memory
         target:
           type: AverageValue
           averageValue: {{ .Values.deployment.scaler.avgMem }}
+    - type: Resource
+      resource:
+        name: cpu
+        target:
+          type: Utilization
+          averageUtilization: {{ .Values.deployment.scaler.avgCPU }}
 {{- end }}
