@@ -1,4 +1,4 @@
-name: Tagged release push ECR from
+name: release
 
 on:
   push:
